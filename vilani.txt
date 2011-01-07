@@ -1,0 +1,12 @@
+# Vilani.  Probabilities are identical with those of the old table
+# printed in the Megatraveller Referee's Companion (and elsewhere).
+#
+# IIRC, the other languages of the Imperium have funny rules that
+# make them harder to implement in this format.
+#
+W:S SA SAA SAAA SAAAA SAAAAA
+S:V V V V V V IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV VF VF VF VF VF VF VF VF IVF IVF IVF IVF IVF IVF IVF
+A:IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IV IVF IVF IVF IVF IVF IVF IVF IVF IVF IVF IVF IVF IVF IVF IVF
+I:k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k k g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g g m m m m m m m m m m m m m m m m m m d d d d d d d d d d d d d d d d d d d d d l l l l l l l l l l l l l l l l l l l l l sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh kh kh kh kh kh kh kh kh kh kh kh kh kh kh kh kh kh kh n n n n n n n n n n s s s s s s s s s s p p p p b b b b z z z z r r r r
+V:a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a e e e e e e e e e e e e e e e e e i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i i u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u u aa aa aa aa aa aa aa aa ii ii ii ii ii ii ii ii ii ii ii ii ii ii ii uu uu uu uu uu uu uu uu
+F:r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r r n n n n n n n n n n n n n n n n n n n n n n n n n m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m m sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh sh g g g g g g g g g g g g g s s s s s s s s s s s s s d d d d d d d d d d d d d p p p p p p k k k k k k

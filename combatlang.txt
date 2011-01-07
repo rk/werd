@@ -1,0 +1,18 @@
+# vowels
+# => soft vowels (ah, eh, ih, oh, uh)
+V: a e i o u
+# => hard vowels (A, E, I, OH, OO)
+H: ä ë ï ö ü
+Q: V V H
+# consonants
+D: d t th
+N: m l n r s
+L: w p q b d 
+C: D N L
+K: N L
+# prefixes
+P: QC CQ
+
+# words
+T: QNLQ(D) HKVC(D)
+W: P-T

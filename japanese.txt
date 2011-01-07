@@ -1,0 +1,21 @@
+# Japanese words/names.  Based on Kaoru Moriyama's (caro@aaa-int.or.jp)
+# excellent description of how Japanese names are formed.  But I'm afraid
+# my word generators aren't perfect ...
+#
+W:SSV SSV VSS VSSS SnSS SVSS VnVSS A A A A A B B B B B C C C C C F F F F F G G G G G H H H H H I I I I I
+A:akiO haruO natsuO fuyuO kazuO yoshiO tomoO tatsuO tetsuO takaO noriO
+B:mitsuO yasuO yukiO itsuO masaO hiroO nobuO takeO asaO kuniO kiyoO
+C:shizuO takiO hisaO mikiO yasuO shinO
+F:aiP akiP asaP ayaP ayuP ikuP itsuP utaP emiP kazuP katsuP kiP kimiP kikuP
+G:kiyoP kumiP kotoP sanaP shizuP suzuP tamiP takiP tatsuP takaP tomoP chinaP
+H:chikaP nanaP noriP haruP hanaP hisaP fumiP maiP masaP miyaP mamiP makiP
+I:minaP mikiP mitsuP yasuP yukiP yoshiP riP rikaP rinaP ritsuP reiP wakaP
+O:o hiko taro yoshi ro aki toshi fumi kazu ji shi ma ya
+P:ko ko ko ko e mi yo ka ri
+V:a i u e o
+S:kV nV hV mV rV gV pV bV tT wa U U U zZ zZ
+T:a su e o
+Y:a u o
+Z:u e o
+U:yY ji dD vu
+D:a e o

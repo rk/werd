@@ -1,0 +1,58 @@
+# Werd doesn't take kindly to improperly formatted data files.
+# For example, white space inside fields 1 and 2 is meaningful!
+# Be careful with colons too ...
+#
+# Note: there must be a rule, indexed as "W", containing the
+# basic combinations of rules/letters to be found in your words.
+#
+# Here's what the fields mean:
+# Rule-index:Rule list
+#
+# It's a good idea to put comments telling you what each rule
+# is designed to do ...
+#
+# Words
+W:CT CT CX CDF CVFT CDFU CTU IT ICT A
+#
+# Latinate words
+A:KVKVtion
+K:b c d f g j l m n p qu r s t v sP
+#
+# Prefixes
+I:ex in un re de
+#
+# Ends of Words
+T:VF VEe
+#
+# Suffixes
+U:er ish ly en ing ness ment able ive
+#
+# Consonants
+C:b c ch d f g h j k l m n p qu r s sh t th v w y sP Rr Ll
+#
+# Occurring before silent "e"
+E:b c ch d f g dg l m n p r s t th v z
+#
+# Final letters
+F:b tch d ff g gh ck ll m n n ng p r ss sh t tt th x y zz rR sP lL
+#
+# Voiceless stops
+P:p t k c
+#
+# Voiced stops
+Q:b d g
+#
+# Can be next to "l"
+L:b f k p s
+#
+# Can be next to "r"
+R:P Q f th sh
+#
+# Simple vowels
+V:a e i o u
+#
+# Dipthongs
+D:aw ei ow ou ie ea ai oy
+#
+# Final vowels/dipthongs
+X:e i o aw ow oy
