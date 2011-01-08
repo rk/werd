@@ -84,6 +84,6 @@ Hennings][alvish] brainchild, which I used as a testcase for creating this featu
 
 
   [cpound]: http://www.ruf.rice.edu/~pound/#werd
-  [parslet]: kschiess.github.com/parslet/index.html
+  [parslet]: http://kschiess.github.com/parslet/index.html
   [markr]: http://www.zompist.com/
   [alvish]: http://www.langmaker.com/ml0108b.htm
