@@ -8,16 +8,21 @@ require 'pp'
 def word_iterator(data)
   Enumerator.new do |result|
     first, *parts = data
+    num = parts.size
     start = parts.map(&:peek)
 
-    first.each_with_index do |letter, index|
+    # The first iterator I limited to cycle once, so we'll just base our iteration off it.
+    first.each do |letter|
+      # This will produce all a__ combinations, iterating from right to left.
       begin
         result << letter + parts.map(&:peek).join
         parts[-1].next
 
-        (parts.size - 1).downto(0) do |i|
-
-          parts[i-1].next if i > 0 && parts[i].peek == start[i]
+        # This will roll the iteration from right to left odometer-style.
+        # When the right iterator (i) has rolled to its beginning it increments
+        # the one before it (i-1).
+        (num - 1).downto(1) do |i|
+          parts[i-1].next if parts[i].peek == start[i]
         end
       end while parts.map(&:peek) != start
     end
@@ -67,8 +72,8 @@ $rules['K'] = $rules['N'] | $rules['L']
 $rules['P'] = ($rules['Q'].product($rules['C']) | $rules['C'].product($rules['Q'])).map { |i| i.join }
 
 pattern = []
-pattern << $rules['H'].cycle(1)
-pattern << $rules['C'].cycle
+pattern << $rules['H'].cycle(1) # produces an enumerator that cycles once
+pattern << $rules['C'].cycle # produces an enumerator that cycles infinitely
 pattern << $rules['V'].cycle
 
 generator = word_iterator(pattern)
