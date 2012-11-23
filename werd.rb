@@ -39,27 +39,27 @@ op = OptionParser.new do |opts|
   opts.on("-n", "--number NUM", Integer, "How many words to generate") do |n|
     $options.number = n
   end
-  
+
   opts.on('-i', '--infinite', 'Generates an infinite set of words') do
     $options.number = -1
   end
-  
+
   opts.on('-c', '--compact', 'Seperates words with a tab') do
     $options.seperator = "\t"
   end
-  
+
   opts.on('-m', '--[no-]mutate', 'Perform morphology derivations') do |m|
     $options.morphology = m
   end
-  
+
   opts.on('--keep-syllables', 'Leave syllable breaks in the output') do
     $options.keep_syllables = true
   end
-  
+
   opts.on('--debug', 'Enable debug output') do
     $options.debug = true
   end
-  
+
   opts.on_tail("-h", "--help", "Show this message") do
     puts opts
     exit
@@ -75,22 +75,22 @@ rescue
 end
 
 start = Time.now
-Lang.load(File.read($options.file))
+lang = Language.new($options.file)
 printf("Took %.4f seconds to load the config file\n" % (Time.now - start))
 
-if Lang::Rule.size > 0
+unless lang.rules.empty?
   srand
-  
+
   if $options.number == -1
     puts "Generating an infinite set of words from #{File.basename($options.file)}"
     loop do
-      print Lang.word, $options.seperator
+      print lang.word, $options.seperator
     end
   else
     puts "Generating #{$options.number} words from #{File.basename($options.file)}"
-    $options.number.times { print Lang.word, $options.seperator }
+    $options.number.times { print lang.word, $options.seperator }
   end
-  
+
   puts if $options.seperator == "\t"
 else
   raise "Cannot generate words without valid rules!"
