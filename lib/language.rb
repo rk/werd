@@ -1,5 +1,6 @@
 require 'parslet'
 require 'parslet/convenience'
+require 'irb'
 
 class Language
 
@@ -15,9 +16,7 @@ class Language
 
   def load file
     source = File.read(file)
-    parser = Parser.new
-    config = Config.new
-    result = config.apply(parser.parse_with_debug(source))
+    result = Config.new.apply(Parser.new.parse_with_debug(source))
 
     result.each do |obj|
       if obj.respond_to? :id
@@ -28,6 +27,8 @@ class Language
         raise Exception.new "Unknown class remaining after parsing: #{obj.class}"
       end
     end
+
+    @morphology.compile(@rules)
   end
 
   # Generates one random word.
@@ -40,7 +41,7 @@ class Language
     end
 
     # Handles optional sub-patterns.
-    word.gsub!(/\(([^()]+?)\)/) { rand(100) <= 50 ? $1 : '' }
+    word.gsub!(/\(([^()]+?)\)/) { rand(100) < 50 ? $1 : '' }
 
     if @morphology.any? && $options.morphology == true
       word = @morphology.apply_to(word)
@@ -53,15 +54,21 @@ class Language
 
   class Morphology < Array
     def apply_to(word)
-      each do |rule|
-        word = rule.apply_to(word)
+      inject(word) do |result, transform|
+        old = result.dup
+        result = transform.apply_to(result)
+        puts "#{old} -> #{result}" if $options.debug && old != result
+        result
       end
+    end
+
+    def compile(rules)
+      each { |transform| transform.compile(rules) }
     end
   end
 
   # Stores a single rule, identified by a single letter; it contains an array of
-  # characters and is capable of returning a random item from itself. The class
-  # is capable of pretending to be a hash and so contain all the rules.
+  # characters and is capable of returning a random item from itself.
   class Rule
     attr_accessor :id
     attr_accessor :chars
@@ -78,13 +85,22 @@ class Language
 
   # This class handles the regular expression matching and replacement to simulate
   # linguistic morphology. This is my own innovation to the original script.
-  class Transformation < Struct.new(:pattern, :replacement)
-    def pattern= value
-      @pattern = Regexp.new(value.gsub(/(\||\&)([A-Z])/) { Rules[$2].chars.join($1 == '|' ? $1 : '') })
+  class Transformation
+    attr_accessor :pattern
+    attr_accessor :replacement
+
+    def initialize(pattern, replacement)
+      @pattern = pattern
+      @replacement = replacement
     end
 
-    def apply_to string
+    def apply_to(string)
       string.gsub(@pattern, @replacement)
+    end
+
+    def compile(rules)
+      @pattern.gsub!(/(\||\&)([A-Z])/) { rules[$2].chars.join($1 == '|' ? $1 : '') }
+      @pattern = Regexp.new(@pattern)
     end
   end
 
@@ -108,9 +124,9 @@ class Language
 
     # matches:
     # /(pattern)/ > "replacement \1"
-    rule(:morph_from) { str('/') >> ((str('\\') | str('/').absnt?) >> any).repeat >> str('/') }
-    rule(:morph_to) { str('"') >> ((str('\\') | str('"').absnt?) >> any).repeat >> str('"') }
-    rule(:transform) { morph_from.as(:regex) >> spaces >> str('>') >> spaces >> morph_to.as(:replace) }
+    rule(:morph_from) { str('/') >> ((str('\\') | str('/').absnt?) >> any).repeat.as(:regex) >> str('/') }
+    rule(:morph_to) { str('"') >> ((str('\\') | str('"').absnt?) >> any).repeat.as(:replace) >> str('"') }
+    rule(:transform) { morph_from >> spaces >> str('>') >> spaces >> morph_to }
 
     rule(:expression) { (chargroup | transform) >> (spaces >> comment).maybe }
 
