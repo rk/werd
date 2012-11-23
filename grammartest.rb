@@ -5,28 +5,21 @@
 
 require 'pp'
 
-# zis is for humongous datasets that require deep repetition.
-def infinite_iterator(array)
-  Enumerator.new do |result|
-    loop do
-      array.cycle { |item| result << item }
-    end
-  end
-end
-
 def word_iterator(data)
   Enumerator.new do |result|
-    first = data.map { |p| p.next }
-    result << first.join
+    first, *parts = data
+    start = parts.map(&:peek)
 
-    i = 1
-    parts = first.dup
-    loop do
-      parts[2-i] = data[2-i].next
-      break if parts == first
-      
-      result << parts.join
-      i = ((i + 1) % parts.size)
+    first.each_with_index do |letter, index|
+      begin
+        result << letter + parts.map(&:peek).join
+        parts[-1].next
+
+        (parts.size - 1).downto(0) do |i|
+
+          parts[i-1].next if i > 0 && parts[i].peek == start[i]
+        end
+      end while parts.map(&:peek) != start
     end
   end
 end
@@ -35,10 +28,10 @@ class Array
   def permutation_count
     self.map{ |item| item.size }.inject(:*)
   end
-  
+
   def permutation_size
     self.map do |pa|
-      pa.max.length 
+      pa.max.length
     end.inject(:+)
   end
 end
@@ -74,19 +67,18 @@ $rules['K'] = $rules['N'] | $rules['L']
 $rules['P'] = ($rules['Q'].product($rules['C']) | $rules['C'].product($rules['Q'])).map { |i| i.join }
 
 pattern = []
-pattern << infinite_iterator($rules['H'])
-pattern << infinite_iterator($rules['C'])
-pattern << infinite_iterator($rules['V'])
+pattern << $rules['H'].cycle(1)
+pattern << $rules['C'].cycle
+pattern << $rules['V'].cycle
 
 generator = word_iterator(pattern)
 
-begin
-  while word = generator.next
-    print word.ljust(20)
-  end
-rescue
-  puts
+loop do
+  print generator.next.ljust(8)
 end
+
+puts
+exit
 
 =begin
 FIRST = pattern.map { |p| p.next }
@@ -109,7 +101,7 @@ H = %w{ä ë ï ö ü} # => hard vowels (A, E, I, OH, OO)
 Q = V | H
 D = %w{d t th}
 N = %w{m l n r s}
-L = %w{w p q b d} 
+L = %w{w p q b d}
 C = D | N | L | %w{ k c x j v }
 K = N | L
 P = Q.product(C) | C.product(Q) # %w{QC CQ}
@@ -124,18 +116,18 @@ patterns = {}
 %w{QNLQ(D) HKVC(D) PQCQ}.each do |pattern|
   patterns[pattern] = pattern.scan(/\(?[a-zA-Z]\)?/).collect do |item|
     letter = item.dup
-  
+
     case letter
     when /([A-Z])/
       item = $rules[$1].dup or fail "Unknown key #{$1} in $rules"
     when /([^A-Z])/
       item = [ $1 ]
     end
-  
+
     if letter[0] == ?(
       item << ''
     end
-  
+
     item
   end
 end
