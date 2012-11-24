@@ -1,6 +1,7 @@
 require 'parslet'
 require 'parslet/convenience'
 require 'pp'
+require 'set'
 
 class Language
   attr_accessor :rules
@@ -28,7 +29,7 @@ class Language
     end
 
     @morphology.compile(@rules)
-    @rules.each { |k,r| r.compile(@rules) if k != 'W' }
+    @rules.cycle(2).each { |k,r| r.compile(@rules) if k != 'W' }
   end
 
   # Generates one random word.
@@ -72,47 +73,66 @@ class Language
   class Rule
     attr_accessor :id
     attr_accessor :chars
+    attr_accessor :compiled
 
     def initialize(id, chars)
       @id = id
       @chars = chars.split(/ +/)
+      @compiled = id == 'W' || (/[(A-Z]/ =~ chars).nil?
     end
 
     def random
       @chars[rand(@chars.size)].dup
     end
 
-    # Compiles, or flattens, a given rule. Doesn't support nested optional groups.
+    # Compiles, or flattens, a given rule.
     def compile(rules)
       @chars.map! do |group|
-        columns = []
-        optional = false
+        unless /[(A-Z]/ =~ group
+          group
+        else
+          columns = pattern_to_data(group, rules)
+          first, *rest = columns
 
-        group.chars do |c|
-          case c
-          when 'A'..'Z' then
-            (optional ? columns.last : columns) << rules[c].chars.dup
-          when '(' then
-            optional = true
-            columns << []
-          when ')' then
-            optional = false
-            columns.last.flatten! << ''
+          unless rest.empty?
+            # pp group, columns
+            first.product(*rest).map(&:join)
           else
-            (optional ? columns.last : columns) << [c]
+            first
           end
         end
+      end
 
-        if columns.size > 1
-          # print @id, ' '
-          # pp columns
-          front, *rest = columns
-          front.product(*rest).map(&:join)
+      @chars.flatten!
+    end
+
+    # Compiles a pattern to all its permutations, for optimization purposes
+    # and for total set iteration. Still doesn't necessarily support deep
+    # -nested optional groups...
+    def pattern_to_data(pattern, rules)
+      columns = []
+      optional = []
+
+      pattern.scan(/[^A-Z()]+|[A-Z()]/).each do |c|
+        case c
+        when 'A'..'Z' then
+          (optional.empty? ? columns : optional.last) << rules[c].chars.dup
+        when '(' then
+          optional << []
+        when ')' then
+          # compile the permutations...
+          set = optional.pop
+          set = set[0].product(*set[1,-1]).map(&:join) if set.size > 1
+          set.flatten!
+          set << ''
+
+          columns << set
         else
-          columns.flatten
+          (optional.empty? ? columns : optional.last) << [c]
         end
       end
-      @chars.flatten!
+
+      columns
     end
   end
 
@@ -138,6 +158,35 @@ class Language
   end
 
   private
+
+  # Builds an full-permutation enumerator for an array of arrays; the first item cycles once,
+  # the rest cycle infinitely odometer-style. EG, the incrementation rolls up from right to
+  # left-most. Ends when the first letter and the whole pattern has cycled to its end.
+  def word_iterator(data)
+    first = data[0].cycle(1)
+    parts = data[1,-1].map(&:cycle)
+
+    Enumerator.new do |result|
+      num = parts.size
+      start = parts.map(&:peek)
+
+      # The first iterator I limited to cycle once, so we'll just base our iteration off it.
+      first.each do |letter|
+        # This will produce all a__ combinations, iterating from right to left.
+        begin
+          result << letter + parts.map(&:peek).join
+          parts[-1].next
+
+          # This will roll the iteration from right to left odometer-style.
+          # When the right iterator (i) has rolled to its beginning it increments
+          # the one before it (i-1).
+          (num - 1).downto(1) do |i|
+            parts[i-1].next if parts[i].peek == start[i]
+          end
+        end while parts.map(&:peek) != start
+      end
+    end
+  end
 
   # +Parser+ is the parser class descended from Parslet. Create one and use the +apply+
   # method to parse the source. The returned array needs to be passed to +Config+ to be
