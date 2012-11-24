@@ -1,9 +1,8 @@
 require 'parslet'
 require 'parslet/convenience'
-require 'irb'
+require 'pp'
 
 class Language
-
   attr_accessor :rules
   attr_accessor :morphology
 
@@ -29,6 +28,7 @@ class Language
     end
 
     @morphology.compile(@rules)
+    @rules.each { |k,r| r.compile(@rules) if k != 'W' }
   end
 
   # Generates one random word.
@@ -79,7 +79,40 @@ class Language
     end
 
     def random
-      chars[rand(chars.size)].dup
+      @chars[rand(@chars.size)].dup
+    end
+
+    # Compiles, or flattens, a given rule. Doesn't support nested optional groups.
+    def compile(rules)
+      @chars.map! do |group|
+        columns = []
+        optional = false
+
+        group.chars do |c|
+          case c
+          when 'A'..'Z' then
+            (optional ? columns.last : columns) << rules[c].chars.dup
+          when '(' then
+            optional = true
+            columns << []
+          when ')' then
+            optional = false
+            columns.last.flatten! << ''
+          else
+            (optional ? columns.last : columns) << [c]
+          end
+        end
+
+        if columns.size > 1
+          # print @id, ' '
+          # pp columns
+          front, *rest = columns
+          front.product(*rest).map(&:join)
+        else
+          columns.flatten
+        end
+      end
+      @chars.flatten!
     end
   end
 
@@ -138,9 +171,6 @@ class Language
   # +Config+ is the class that turns the various arrays and hashes into useful data
   # In this case a +Rule+ is constructed for each definition.
   class Config < Parslet::Transform
-    # rule(simple(:id)) { id.to_s }
-    # rule(simple(:chars)) { chars.to_s.split(/ +/) }
-    # rule(:from => simple(:from), :to => simple(:to)) { Transformation.new(from, to) }
     rule(:regex => simple(:rege), :replace => simple(:replac)) { Transformation.new(rege.to_s, replac.to_s) }
     rule(:id => simple(:i), :chars => simple(:char)) { Rule.new(i.to_s, char.to_s) }
   end
