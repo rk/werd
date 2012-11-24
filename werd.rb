@@ -77,18 +77,17 @@ end
 start = Time.now
 lang = Language.new($options.file)
 printf("Took %.4f seconds to load the config file\n" % (Time.now - start))
+srand
 
-unless lang.rules.empty?
-  srand
-
+unless lang.empty?
   if $options.number == -1
     puts "Generating an infinite set of words from #{File.basename($options.file)}"
     loop do
-      print lang.word, $options.seperator
+      print lang.generate, $options.seperator
     end
   else
     puts "Generating #{$options.number} words from #{File.basename($options.file)}"
-    $options.number.times { print lang.word, $options.seperator }
+    $options.number.times { print lang.generate, $options.seperator }
   end
 
   puts if $options.seperator == "\t"

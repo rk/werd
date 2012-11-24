@@ -1,48 +1,43 @@
 require 'parslet'
 require 'parslet/convenience'
 require 'pp'
-require 'set'
 
 class Language
   attr_accessor :rules
   attr_accessor :morphology
 
-  def initialize file=nil
-    @rules = {}
+  def initialize(file=nil)
+    @rules = Rules.new
     @morphology = Morphology.new
 
-    load(file) if file
+    load(file) unless file.nil?
   end
 
-  def load file
+  def load(file)
     source = File.read(file)
     result = Config.new.apply(Parser.new.parse_with_debug(source))
 
     result.each do |obj|
-      if obj.respond_to? :id
-        @rules[obj.id] = obj
-      elsif obj.respond_to? :apply_to
+      case obj
+      when Transformation
         @morphology << obj
+      when Array
+        @rules.add(*obj)
       else
         raise Exception.new "Unknown class remaining after parsing: #{obj.class}"
       end
     end
 
+    @rules.optimize #if $options.number == -1
     @morphology.compile(@rules)
-    @rules.cycle(2).each { |k,r| r.compile(@rules) if k != 'W' }
   end
 
-  # Generates one random word.
-  def word
-    word = @rules['W'].random
+  def empty?
+    @rules.empty?
+  end
 
-    # Because we might return another capital letter, and gsub will not replace all the
-    # newly inserted capitals, a while loop becomes necessary.
-    while word.sub!(/[A-Z]/) { |l| @rules[l].random }
-    end
-
-    # Handles optional sub-patterns.
-    word.gsub!(/\(([^()]+?)\)/) { rand(100) < 50 ? $1 : '' }
+  def generate
+    word = rules.random_word
 
     if @morphology.any? && $options.morphology == true
       word = @morphology.apply_to(word)
@@ -68,30 +63,78 @@ class Language
     end
   end
 
-  # Stores a single rule, identified by a single letter; it contains an array of
-  # characters and is capable of returning a random item from itself.
-  class Rule
-    attr_accessor :id
-    attr_accessor :chars
-    attr_accessor :compiled
-
-    def initialize(id, chars)
-      @id = id
-      @chars = chars.split(/ +/)
-      @compiled = id == 'W' || (/[(A-Z]/ =~ chars).nil?
+  class Rules
+    def initialize
+      @rules = Hash.new([])
     end
 
-    def random
-      @chars[rand(@chars.size)].dup
+    def add(id, chars)
+      @rules[id] = chars
+    end
+
+    def [](id)
+      @rules[id]
+    end
+
+    def random(id)
+      @rules[id].sample
+    end
+
+    # Generates one random word.
+    def random_word
+      word = random('W')
+
+      # Because we might return another capital letter, and gsub will not replace all the
+      # newly inserted capitals, a while loop becomes necessary.
+      while /[A-Z]/ =~ word
+        word.sub!(/[A-Z]/) { |l| random(l) }
+      end
+
+      # Handles optional sub-patterns.
+      word.gsub!(/\(([^()]+?)\)/) { rand(100) < 50 ? $1 : '' }
+
+      word
+    end
+
+    def optimize
+      optimization_order.each do |(id, _)|
+        compile(id)
+      end
+    end
+
+    def empty?
+      @rules.empty?
+    end
+
+    private
+
+    def optimization_order
+      matrix = @rules.dup.reject { |key| key == 'W' }
+      matrix.each { |key,chars| matrix[key] = chars.join.gsub(/[^A-Z]/, '').scan(/./) }
+
+      # Now determine dependency depth by how many other dependencies the other has.
+      matrix.each do |key, deps|
+        matrix[key] = deps.flat_map { |key| matrix[key].length + 1 }
+      end
+
+      # Now determine the approximate depth of dependencies.
+      matrix.each do |key, depth|
+        matrix[key] = depth.inject(0, :+)
+      end
+
+      # Remove first-order dependencies.
+      matrix.delete_if { |_, depth| depth == 0 }
+
+      matrix.to_a.sort { |a,b| a.last <=> b.last }
     end
 
     # Compiles, or flattens, a given rule.
-    def compile(rules)
-      @chars.map! do |group|
+    def compile(id)
+      @rules[id].map! do |group|
         unless /[(A-Z]/ =~ group
           group
         else
-          columns = pattern_to_data(group, rules)
+          columns = pattern_to_data(group)
           first, *rest = columns
 
           unless rest.empty?
@@ -103,20 +146,20 @@ class Language
         end
       end
 
-      @chars.flatten!
+      @rules[id].flatten!
     end
 
     # Compiles a pattern to all its permutations, for optimization purposes
     # and for total set iteration. Still doesn't necessarily support deep
     # -nested optional groups...
-    def pattern_to_data(pattern, rules)
+    def pattern_to_data(pattern)
       columns = []
       optional = []
 
       pattern.scan(/[^A-Z()]+|[A-Z()]/).each do |c|
         case c
         when 'A'..'Z' then
-          (optional.empty? ? columns : optional.last) << rules[c].chars.dup
+          (optional.empty? ? columns : optional.last) << @rules[c].dup
         when '(' then
           optional << []
         when ')' then
@@ -133,27 +176,6 @@ class Language
       end
 
       columns
-    end
-  end
-
-  # This class handles the regular expression matching and replacement to simulate
-  # linguistic morphology. This is my own innovation to the original script.
-  class Transformation
-    attr_accessor :pattern
-    attr_accessor :replacement
-
-    def initialize(pattern, replacement)
-      @pattern = pattern
-      @replacement = replacement
-    end
-
-    def apply_to(string)
-      string.gsub(@pattern, @replacement)
-    end
-
-    def compile(rules)
-      @pattern.gsub!(/(\||\&)([A-Z])/) { rules[$2].chars.join($1 == '|' ? $1 : '') }
-      @pattern = Regexp.new(@pattern)
     end
   end
 
@@ -188,6 +210,27 @@ class Language
     end
   end
 
+  # This class handles the regular expression matching and replacement to simulate
+  # linguistic morphology. This is my own innovation to the original script.
+  class Transformation
+    attr_accessor :pattern
+    attr_accessor :replacement
+
+    def initialize(pattern, replacement)
+      @pattern = pattern
+      @replacement = replacement
+    end
+
+    def apply_to(string)
+      string.gsub(@pattern, @replacement)
+    end
+
+    def compile(rules)
+      @pattern.gsub!(/(\||\&)([A-Z])/) { rules[$2].join($1 == '|' ? $1 : '') }
+      @pattern = Regexp.new(@pattern)
+    end
+  end
+
   # +Parser+ is the parser class descended from Parslet. Create one and use the +apply+
   # method to parse the source. The returned array needs to be passed to +Config+ to be
   # transformed into rules.
@@ -218,10 +261,11 @@ class Language
   end
 
   # +Config+ is the class that turns the various arrays and hashes into useful data
-  # In this case a +Rule+ is constructed for each definition.
+  # In this case a +Charset+ is constructed for each definition.
   class Config < Parslet::Transform
     rule(:regex => simple(:rege), :replace => simple(:replac)) { Transformation.new(rege.to_s, replac.to_s) }
-    rule(:id => simple(:i), :chars => simple(:char)) { Rule.new(i.to_s, char.to_s) }
+    rule(:id => simple(:rule), :chars => simple(:array)) { [rule.to_s, array.to_s.split(/ +/)] }
+    # rule(:id => simple(:rule)) { rule.to_s }
   end
 
 end
