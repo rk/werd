@@ -1,20 +1,25 @@
 require 'parslet'
 require 'parslet/convenience'
 require 'pp'
+require 'securerandom'
 
 class Language
   attr_accessor :rules
   attr_accessor :morphology
 
-  def initialize(file=nil)
+  def self.from_file(file)
+    self.new(File.read(file))
+  end
+
+  def self.from_string(source)
+    self.new(source)
+  end
+
+  # expects a string representing the source
+  def initialize(source)
     @rules = Rules.new
     @morphology = Morphology.new
 
-    load(file) unless file.nil?
-  end
-
-  def load(file)
-    source = File.read(file)
     result = Config.new.apply(Parser.new.parse_with_debug(source))
 
     result.each do |obj|
@@ -24,11 +29,11 @@ class Language
       when Array
         @rules.add(*obj)
       else
-        raise Exception.new "Unknown class remaining after parsing: #{obj.class}"
+        raise Exception.new("Unknown class remaining after parsing: #{obj.class}")
       end
     end
 
-    @rules.optimize #if $options.number == -1
+    @rules.optimize
     @morphology.compile(@rules)
   end
 
@@ -77,7 +82,8 @@ class Language
     end
 
     def random(id)
-      @rules[id].sample
+      r = @rules[id]
+      r[SecureRandom.random_number(r.length)].dup
     end
 
     # Generates one random word.
@@ -86,8 +92,7 @@ class Language
 
       # Because we might return another capital letter, and gsub will not replace all the
       # newly inserted capitals, a while loop becomes necessary.
-      while /[A-Z]/ =~ word
-        word.sub!(/[A-Z]/) { |l| random(l) }
+      while word.sub!(/[A-Z]/) { |l| random(l) }
       end
 
       # Handles optional sub-patterns.
@@ -97,8 +102,10 @@ class Language
     end
 
     def optimize
+      puts "Post rule-table optimization:" if $options.debug
       optimization_order.each do |(id, _)|
         compile(id)
+        puts "\t#{id}: #{@rules[id].length} combinations" if $options.debug
       end
     end
 
@@ -146,7 +153,7 @@ class Language
         end
       end
 
-      @rules[id].flatten!
+      @rules[id].flatten!.uniq!
     end
 
     # Compiles a pattern to all its permutations, for optimization purposes

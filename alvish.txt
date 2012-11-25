@@ -1,6 +1,6 @@
 # Alvish is (C) 1995 by Jeffery Henning
 # Taken from: http://www.langmaker.com/ml0108b.htm
-# 
+#
 # Used w/o permission as an example of new features for werd.rb
 # such as optional groups and morphological simulations.
 
