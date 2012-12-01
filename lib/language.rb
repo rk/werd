@@ -3,6 +3,9 @@ require 'parslet/convenience'
 require 'pp'
 require 'securerandom'
 
+class CircularReferenceException < Exception
+end
+
 class Language
   attr_accessor :rules
   attr_accessor :morphology
@@ -116,23 +119,48 @@ class Language
     private
 
     def optimization_order
-      matrix = @rules.dup.reject { |key| key == 'W' }
-      matrix.each { |key,chars| matrix[key] = chars.join.gsub(/[^A-Z]/, '').scan(/./) }
+      matrix = dependency_depth(validate_dependencies(dependencies))
 
-      # Now determine dependency depth by how many other dependencies the other has.
+      # Remove first-order dependencies.
+      matrix.delete_if { |_, depth| depth == 0 }
+      matrix.to_a.sort { |a,b| a.last <=> b.last }
+    end
+
+    # This just filters the ruleset down into a hash with the rules only containing references.
+    def dependencies
+      matrix = @rules.dup.reject { |key| key == 'W' }
+      matrix.each { |key,chars| matrix[key] = chars.join.gsub(/[^A-Z]/, '').scan(/./).uniq }
+      matrix
+    end
+
+    # Looks for obvious circular references, 1 or 2 iterations deep.
+    def validate_dependencies(matrix)
+      matrix.each do |key, deps|
+        throw CircularReferenceException.new("Rule #{key} cannot reference itself.") if deps.include?(key)
+
+        deps.each do |k|
+          throw CircularReferenceException.new("Circular reference in #{k}, which references #{key} which also references #{k}") if matrix[k].include?(key)
+        end
+      end
+
+      matrix
+    end
+
+    # This doesn't determine dependency depth at this time, what it does is
+    # return the approximate number of references a given given rule has.
+    # For now this is a "best shot" algorithm that could use replacement
+    # by something that really works.
+    def dependency_depth(matrix)
+      # determine dependency depth by how many other dependencies the other has.
       matrix.each do |key, deps|
         matrix[key] = deps.flat_map { |key| matrix[key].length + 1 }
       end
 
-      # Now determine the approximate depth of dependencies.
       matrix.each do |key, depth|
         matrix[key] = depth.inject(0, :+)
       end
 
-      # Remove first-order dependencies.
-      matrix.delete_if { |_, depth| depth == 0 }
-
-      matrix.to_a.sort { |a,b| a.last <=> b.last }
+      matrix
     end
 
     # Compiles, or flattens, a given rule.
