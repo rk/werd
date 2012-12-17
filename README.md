@@ -15,7 +15,7 @@ Improvements
 * Optional patterns, including nested ones. "CV(C)" gives that last C pattern a 50% chance to be retained.
 * Unicode support.
 * Morphology! Werd.rb can apply some morphology rules to your language to change sounds and letter groups, etc.
-* [Code Climate][https://codeclimate.com/github/rk/werd] now monitors the code for quality.
+* [Code Climate](https://codeclimate.com/github/rk/werd) now monitors the code for quality.
 
 Prerequisites
 -------------
