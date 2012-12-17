@@ -1,4 +1,4 @@
-Werd.rb
+Werd.rb [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/rk/werd)
 =======
 
 Werd.rb is a word generator based off the Perl version (by [Chris Pound][cpound]) of [Mark Rosenfelder's][markr]
@@ -15,7 +15,6 @@ Improvements
 * Optional patterns, including nested ones. "CV(C)" gives that last C pattern a 50% chance to be retained.
 * Unicode support.
 * Morphology! Werd.rb can apply some morphology rules to your language to change sounds and letter groups, etc.
-* [Code Climate](https://codeclimate.com/github/rk/werd) now monitors the code for quality.
 
 Prerequisites
 -------------
