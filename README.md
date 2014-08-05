@@ -83,7 +83,7 @@ Hennings][alvish] brainchild, which I used as a testcase for creating this featu
     /^[aeiou]([mlnrs][aeiou])/ > "\1"
 
 
-  [cpound]: http://www.ruf.rice.edu/~pound/#werd
+  [cpound]: http://generators.christopherpound.com/#werd
   [parslet]: http://kschiess.github.com/parslet/index.html
   [markr]: http://www.zompist.com/
   [alvish]: http://www.langmaker.com/ml0108b.htm
